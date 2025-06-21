@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+import django_prometheus.urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('board/', include('board.urls'))
+    path('board/', include('board.urls')),
+    path('prometheus/', include('django_prometheus.urls')),
 ]
