@@ -15,7 +15,7 @@ class Board(models.Model):
     class Meta:
         verbose_name = 'Board'
         verbose_name_plural = 'Boards'
-        ordering = ['-created_at']
+        ordering = ['-created_at', '-updated_at']
 
     def create(self, *args, **kwargs):
 
@@ -35,6 +35,7 @@ class Comment(models.Model):
         Board, related_name='comments', on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'Comment on {self.board.title}'
@@ -42,7 +43,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
-        ordering = ['-created_at']
+        ordering = ['-created_at', ' -updated_at']
 
 
 class Like(models.Model):
@@ -62,14 +63,14 @@ class Like(models.Model):
         ordering = ['-created_at']
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(blank=True, null=True)
+# class Category(models.Model):
+#     name = models.CharField(max_length=50, unique=True)
+#     description = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
-    class Meta:
-        verbose_name = 'Category'
-        verbose_name_plural = 'Categories'
-        ordering = ['name']
+#     class Meta:
+#         verbose_name = 'Category'
+#         verbose_name_plural = 'Categories'
+#         ordering = ['name']
