@@ -34,8 +34,9 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 CSRF_COOKIE_DOMAIN = ".textneckhub.p-e.kr"
 SESSION_COOKIE_DOMAIN = ".textneckhub.p-e.kr"  # 세션 쿠키도 함께 설정
 
-# 3. Secure Cookie 설정 (HTTPS 환경이라면 필수!)
-# 프로덕션 환경에서는 반드시 True로 설정해야 해!
+MEDIA_URL = '/media/'  # 웹에서 미디어 파일에 접근할 때 사용할 URL 접두사
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 CSRF_COOKIE_SECURE = True
 
 SESSION_COOKIE_SECURE = True

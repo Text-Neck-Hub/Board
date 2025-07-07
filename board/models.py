@@ -1,76 +1,73 @@
 from django.db import models
-from django.db import transaction
-from django.core.exceptions import ValidationError
 
 
 class Board(models.Model):
-    title = models.CharField(max_length=100)
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True,
+                            help_text="URL에 사용될 고유한 이름 (예: free, qna)")
+    description = models.TextField(
+        blank=True, null=True)
 
     def __str__(self):
-        return self.title
+        return self.name
 
-    class Meta:
-        verbose_name = 'Board'
-        verbose_name_plural = 'Boards'
-        ordering = ['-created_at', '-updated_at']
 
-    def create(self, *args, **kwargs):
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    author = models.IntegerField()
+    board = models.ForeignKey(
+        Board, on_delete=models.CASCADE, related_name='posts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    thumbnail = models.ImageField(
+        upload_to='post_thumbnails/', blank=True, null=True)
 
-        title = kwargs.get('title', '')
-        if not title or title.strip() == '':
-            raise ValidationError("Title cannot be empty")
-        try:
-            content = kwargs.get('content', '')
-            Board.objects.create(title=title, content=content)
-            super().save(*args, **kwargs)
-        except Exception as e:
-            raise ValidationError(f"Error saving Board: {str(e)}")
+    def __str__(self):
+        return f"Post by User ID {self.author}: {self.title}"
+
+
+class AttachedFile(models.Model):
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='post_attachments/')
+    file_name = models.CharField(max_length=255, blank=True)
+    file_size = models.PositiveIntegerField(default=0)
+    mimetype = models.CharField(max_length=100, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.file_name if self.file_name else self.file.name
+
+    def delete(self, *args, **kwargs):
+        self.file.delete()
+        super().delete(*args, **kwargs)
 
 
 class Comment(models.Model):
-    board = models.ForeignKey(
-        Board, related_name='comments', on_delete=models.CASCADE)
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='comments')
+    author = models.IntegerField()
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'Comment on {self.board.title}'
-
-    class Meta:
-        verbose_name = 'Comment'
-        verbose_name_plural = 'Comments'
-        ordering = ['-created_at', ' -updated_at']
+        return f"Comment by User ID {self.author} on {self.post.title[:30]}..."
 
 
 class Like(models.Model):
-    board = models.ForeignKey(
-        Board, related_name='likes', on_delete=models.CASCADE)
-
-    user = models.CharField(max_length=100)
+    user = models.IntegerField()
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='likes')
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f'Like by {self.user} on {self.board.title}'
-
     class Meta:
-        verbose_name = 'Like'
-        verbose_name_plural = 'Likes'
-        unique_together = ('board', 'user')
-        ordering = ['-created_at']
+        unique_together = ('user', 'post')
+        indexes = [
+            models.Index(fields=['user', 'post']),
+            models.Index(fields=['post']),
+        ]
 
-
-# class Category(models.Model):
-#     name = models.CharField(max_length=50, unique=True)
-#     description = models.TextField(blank=True, null=True)
-
-#     def __str__(self):
-#         return self.name
-
-#     class Meta:
-#         verbose_name = 'Category'
-#         verbose_name_plural = 'Categories'
-#         ordering = ['name']
+    def __str__(self):
+        return f"User ID {self.user} likes {self.post.title}"
