@@ -124,15 +124,15 @@ VANILA_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',
+
 ]
 
 THIRD_PARTY_APPS = [
     'django_prometheus',
     'rest_framework',
-    'rest_framework.authtoken',
     'corsheaders',
-    'channels'
+    'channels',
+
 ]
 
 LOCAL_APPS = ['board']
@@ -150,7 +150,7 @@ VANILA_MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 THIRD_PARTY_MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware',
-                          'allauth.account.middleware.AccountMiddleware']
+                          ]
 MIDDLEWARE = VANILA_MIDDLEWARE + THIRD_PARTY_MIDDLEWARE
 
 
@@ -195,14 +195,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
+    'django.contrib.auth.backends.ModelBackend'
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -261,9 +259,7 @@ SIMPLE_JWT = {
 }
 
 
-
 ROOT_URLCONF = 'config.urls'
-
 
 
 LANGUAGE_CODE = 'en-us'

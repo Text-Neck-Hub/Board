@@ -48,7 +48,28 @@ USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
-FORCE_SCRIPT_NAME = '/board'
+
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = None
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer", # 👈 Redis Channel Layer 사용!
+        "CONFIG": {
+            # 🚨🚨🚨 Redis 호스트를 환경 변수에서 가져옴! 🚨🚨🚨
+            "hosts": [os.environ.get('REDIS_CHANNEL_HOST', 'redis://localhost:6379/1')], # /1 은 다른 DB 사용
+            "channel_layer_ping_interval": int(os.environ.get('CHANNEL_LAYER_PING_INTERVAL', 20)),
+            "channel_layer_ping_timeout": int(os.environ.get('CHANNEL_LAYER_PING_TIMEOUT', 30)),
+        },
+    },
+}
+
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# 🚨🚨🚨 FORCE_SCRIPT_NAME은 메인 API 경로에만 적용합니다! 🚨🚨🚨
+# Nginx의 location /auth/ { proxy_pass http://auth:8000/; } 에 대응
+# Django 앱이 /auth/ 라는 경로 아래에서 서비스된다고 명시적으로 알려줍니다.
+
+
