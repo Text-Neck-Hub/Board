@@ -1,4 +1,4 @@
-# your_project_name/urls.py (Board 서비스의 최상위 urls.py)
+
 
 from django.contrib import admin
 from django.urls import path, include

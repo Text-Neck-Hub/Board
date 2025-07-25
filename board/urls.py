@@ -1,31 +1,45 @@
+# from django.urls import path, include
+# from rest_framework.routers import DefaultRouter
+
+# from .views.views import (
+#     BoardViewSet,
+#     #     PostViewSet,
+#     #     CommentViewSet,
+#     #     PostLikeToggleView
+
+
+# )
+
+# router = DefaultRouter()
+# router.register(r'', BoardViewSet, basename='board')
+
+# urlpatterns = [
+#     path('', include(router.urls)),
+
+#     #     path('<str:category_slug>/posts/',
+#     #          PostViewSet.as_view({'get': 'list', 'post': 'create'}), name='post-list-create'),
+#     #     path('<str:category_slug>/posts/<int:pk>/',
+#     #          PostViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='post-detail'),
+
+#     #     path('<str:category_slug>/posts/<int:post_id>/comments/',
+#     #          CommentViewSet.as_view({'get': 'list', 'post': 'create'}), name='comment-list-create'),
+#     #     path('<str:category_slug>/posts/<int:post_id>/comments/<int:pk>/',
+#     #          CommentViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='comment-detail'),
+
+#     #     path('<str:category_slug>/posts/<int:post_id>/like/',
+#     #          PostLikeToggleView.as_view(), name='post-like-toggle'),
+# ]
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-
-from .views import (
-    BoardViewSet,
-    #     PostViewSet,
-    #     CommentViewSet,
-    #     PostLikeToggleView
-
-
+from .routers import (
+    access_token_router,
+    refresh_token_router,
+    user_profile_router,
 )
 
-router = DefaultRouter()
-router.register(r'', BoardViewSet, basename='board')
 
 urlpatterns = [
-    path('', include(router.urls)),
-
-    #     path('<str:category_slug>/posts/',
-    #          PostViewSet.as_view({'get': 'list', 'post': 'create'}), name='post-list-create'),
-    #     path('<str:category_slug>/posts/<int:pk>/',
-    #          PostViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='post-detail'),
-
-    #     path('<str:category_slug>/posts/<int:post_id>/comments/',
-    #          CommentViewSet.as_view({'get': 'list', 'post': 'create'}), name='comment-list-create'),
-    #     path('<str:category_slug>/posts/<int:post_id>/comments/<int:pk>/',
-    #          CommentViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='comment-detail'),
-
-    #     path('<str:category_slug>/posts/<int:post_id>/like/',
-    #          PostLikeToggleView.as_view(), name='post-like-toggle'),
+    path('/',
+         include(access_token_router)),
+    path('refresh-token/', include(refresh_token_router)),
+    path('profile/', include(user_profile_router)),
 ]
