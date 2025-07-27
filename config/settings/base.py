@@ -4,7 +4,7 @@ from pathlib import Path
 
 REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
+DEBUG = False
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
@@ -84,7 +84,7 @@ AUTHENTICATION_BACKENDS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'board.authentication.MSAJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',

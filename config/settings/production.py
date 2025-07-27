@@ -1,9 +1,5 @@
-from .base import *
-import os
 import dj_database_url
-from .jwt import *
-from .logging import *
-DEBUG = False
+import os
 
 allowed_hosts_string = os.environ.get('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = allowed_hosts_string.split(

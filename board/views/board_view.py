@@ -1,8 +1,13 @@
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAdminUser
+
+from ..models import Board
+from ..serializers.board_serializer import BoardSerializer
+
+
 class BoardViewSet(viewsets.ModelViewSet):
-    """
-    게시판(카테고리) 리소스에 대한 CRUD API 뷰셋.
-    게시판 생성, 수정, 삭제는 관리자만 가능하도록 설정.
-    """
+
     queryset = Board.objects.all()
     serializer_class = BoardSerializer
     lookup_field = 'slug'
