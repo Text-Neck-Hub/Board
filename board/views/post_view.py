@@ -1,64 +1,118 @@
-from django.http import JsonResponse
 import logging
 
 from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
 from rest_framework.decorators import action
+from django.core.files.uploadedfile import UploadedFile
 
 from ..services.post_service import PostService
-from ..tasks.post_task import FileTask
+from ..serializers.post_serializer import PostSerializer
+from ..models import Board
+
 
 logger = logging.getLogger('prod')
 
 
-class PostViewSet(viewsets.ViewSet):
+class PostViewSet(viewsets.ModelViewSet):
+    serializer_class = PostSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    async def create(self, request):
+    def list(self, request, board_slug=None):
+        logger.info(f"PostViewSet list: board_slug={board_slug}")
+        try:
+            posts_queryset = PostService.get_all_posts(board_slug=board_slug)
+
+            serializer = self.get_serializer(posts_queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Board.DoesNotExist:
+            logger.error(f"PostViewSet list: Board '{board_slug}' not found.")
+            return Response({'detail': f"Board '{board_slug}' not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.exception(f"PostViewSet list: Error fetching posts: {e}")
+            return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def retrieve(self, request, pk=None, board_slug=None):
+        logger.info(f"PostViewSet retrieve: pk={pk}, board_slug={board_slug}")
+        try:
+            post = PostService.get_post(post_id=pk, board_slug=board_slug)
+            serializer = self.get_serializer(post)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Board.DoesNotExist:
+            logger.error(
+                f"PostViewSet retrieve: Board '{board_slug}' not found.")
+            return Response({'detail': f"Board '{board_slug}' not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            logger.exception(
+                f"PostViewSet retrieve: Error fetching post {pk}: {e}")
+            return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def create(self, request, board_slug=None):
+        logger.info(f"PostViewSet create: board_slug={board_slug}")
         try:
             data = request.data
             title = data.get('title')
             content = data.get('content')
-
-            author_email = self.request.user.email
-            board_slug = data.get('board_slug')
-
-            thumbnail_data = data.get('thumbnail')
-            attached_files_data = data.get('attached_files')
+            author = request.user.id
+            email = request.user.email
+            thumbnail = request.FILES.get('thumbnail')
 
             post = PostService.create_post(
                 title=title,
                 content=content,
-                author_email=author_email,
+                author=author,
+                email=email,
                 board_slug=board_slug,
-                thumbnail_data=thumbnail_data
+                thumbnail=thumbnail
             )
+            serializer = self.get_serializer(post)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            logger.error(f"PostViewSet create: Invalid data/board: {e}")
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception(f"PostViewSet create: Error creating post: {e}")
+            return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            file_task_id = None
-            if attached_files_data:
-                file_task_result = FileTask.delay(
-                    post_id=post.id,
-                    attached_files=attached_files_data
-                )
-                file_task_id = file_task_result.id
-
-            logger.info(
-                f"게시물 '{post.title}' (ID: {post.id}) 본문 및 썸네일 생성 완료. 첨부 파일 처리는 Celery 태스크({file_task_id if file_task_id else '없음'})에 위임. 작성자: {author_email}")
-            return JsonResponse({
-                'status': 'success',
-                'message': '게시물이 성공적으로 작성되었습니다. 첨부 파일은 백그라운드에서 처리됩니다.',
-                'post_id': post.id,
-                'file_task_id': file_task_id
-            }, status=status.HTTP_201_CREATED)
-
+    def update(self, request, pk=None, board_slug=None):
+        logger.info(f"PostViewSet update: pk={pk}, board_slug={board_slug}")
+        try:
+            post = PostService.get_post(post_id=pk, board_slug=board_slug)
+            title = request.data.get('title')
+            content = request.data.get('content')
+            thumbnail: UploadedFile = request.FILES.get('thumbnail')
+            updated_post = PostService.update_post(
+                post=post,
+                title=title,
+                content=content,
+                thumbnail=thumbnail
+            )
+            serializer = self.get_serializer(updated_post)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             logger.exception(
-                f"게시물 생성 요청 처리 중 예외 발생: {e}. 요청 데이터: {request.data}")
-            return JsonResponse({
-                'status': 'error',
-                'message': f'게시물 생성 중 오류가 발생했습니다: {e}'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                f"PostViewSet update: Error updating post {pk}: {e}")
+            return Response({'detail': 'Error updating post'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def destroy(self, request, pk=None, board_slug=None):
+        logger.info(f"PostViewSet destroy: pk={pk}, board_slug={board_slug}")
+        try:
+            post = PostService.get_post(post_id=pk, board_slug=board_slug)
+            PostService.delete_post(post)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.exception(
+                f"PostViewSet destroy: Error deleting post {pk}: {e}")
+            return Response({'detail': 'Error deleting post'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
-    def force_delete(self, request, pk=None):
-        logger.info(f"관리자 요청: 게시물 {pk} 강제 삭제 시도 by {self.request.user.email}")
-        return JsonResponse({'message': f'게시물 {pk} 강제 삭제 요청 완료'}, status=status.HTTP_200_OK)
+    def force_delete(self, request, pk=None, board_slug=None):
+        logger.info(
+            f"PostViewSet force_delete: Post {pk} on board {board_slug} by {self.request.user.id}")
+        try:
+            post = PostService.get_post(post_id=pk, board_slug=board_slug)
+            PostService.delete_post(post)
+            return Response({'message': f'Post {pk} force deleted successfully.'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.exception(
+                f"PostViewSet force_delete: Error deleting post {pk}: {e}")
+            return Response({'detail': 'Error force deleting post'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

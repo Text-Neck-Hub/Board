@@ -1,5 +1,3 @@
-
-
 from django.db import models
 
 
@@ -7,8 +5,7 @@ class Board(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True,
                             help_text="URL에 사용될 고유한 이름 (예: free, qna)")
-    description = models.TextField(
-        blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -16,8 +13,10 @@ class Board(models.Model):
 
 class Post(models.Model):
     title = models.CharField(max_length=200)
-    content = models.TextField()
-    author = models.IntegerField()
+    content = models.TextField(default='', null=True, blank=True)
+    author = models.IntegerField(null=False, blank=False)
+    email = models.EmailField(
+        default='test@example.com', null=False, blank=False)
     board = models.ForeignKey(
         Board, on_delete=models.CASCADE, related_name='posts')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -25,8 +24,11 @@ class Post(models.Model):
     thumbnail = models.ImageField(
         upload_to='post_thumbnails/', blank=True, null=True)
 
+    class Meta:
+        ordering = ['-created_at']
+
     def __str__(self):
-        return f"Post by User ID {self.author}: {self.title}"
+        return f"Post by {self.author.username if hasattr(self.author, 'username') else self.author.email}: {self.title}"
 
 
 class AttachedFile(models.Model):
@@ -46,30 +48,37 @@ class AttachedFile(models.Model):
         super().delete(*args, **kwargs)
 
 
-# class Comment(models.Model):
-#     post = models.ForeignKey(
-#         Post, on_delete=models.CASCADE, related_name='comments')
-#     author = models.IntegerField()
-#     content = models.TextField()
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='comments')
+    author = models.IntegerField(
+        null=False, blank=False)
+    email = models.EmailField(
+        default='test@example.com', null=False, blank=False)
+    content = models.TextField(default='', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-#     def __str__(self):
-#         return f"Comment by User ID {self.author} on {self.post.title[:30]}..."
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.author.username if hasattr(self.author, 'username') else self.author.email} on {self.post.title[:30]}..."
 
 
-# class Like(models.Model):
-#     user = models.IntegerField()
-#     post = models.ForeignKey(
-#         Post, on_delete=models.CASCADE, related_name='likes')
-#     created_at = models.DateTimeField(auto_now_add=True)
+class Like(models.Model):
+    user = models.IntegerField(
+        null=False, blank=False)
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
 
-#     class Meta:
-#         unique_together = ('user', 'post')
-#         indexes = [
-#             models.Index(fields=['user', 'post']),
-#             models.Index(fields=['post']),
-#         ]
+    class Meta:
+        unique_together = ('user', 'post')
+        indexes = [
+            models.Index(fields=['user', 'post']),
+            models.Index(fields=['post']),
+        ]
 
-#     def __str__(self):
-#         return f"User ID {self.user} likes {self.post.title}"
+    def __str__(self):
+        return f"User {self.user.username if hasattr(self.user, 'username') else self.user.email} likes {self.post.title}"
