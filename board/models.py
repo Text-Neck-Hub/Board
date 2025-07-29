@@ -16,7 +16,7 @@ class Post(models.Model):
     content = models.TextField(default='', null=True, blank=True)
     author = models.IntegerField(null=False, blank=False)
     email = models.EmailField(
-        default='test@example.com', null=False, blank=False)
+        default='test@example.com', null=False, blank=False, db_index=True)
     board = models.ForeignKey(
         Board, on_delete=models.CASCADE, related_name='posts')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,7 +54,7 @@ class Comment(models.Model):
     author = models.IntegerField(
         null=False, blank=False)
     email = models.EmailField(
-        default='test@example.com', null=False, blank=False)
+        default='test@example.com', null=False, blank=False, db_index=True)
     content = models.TextField(default='', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
