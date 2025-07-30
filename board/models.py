@@ -1,4 +1,5 @@
 from django.db import models
+from .utils.file_uploader import post_thumbnail_upload_to
 
 
 class Board(models.Model):
@@ -22,7 +23,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     thumbnail = models.ImageField(
-        upload_to='post_thumbnails/', blank=True, null=True)
+        upload_to=post_thumbnail_upload_to, blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']

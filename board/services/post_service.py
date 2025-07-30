@@ -1,10 +1,9 @@
 import logging
-from django.core.files.uploadedfile import UploadedFile
+
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 
 from ..models import Post, Board
-from ..utils.file_uploader import FileUploader
 
 
 logger = logging.getLogger('prod')
@@ -60,7 +59,7 @@ class PostService:
         author: int,
         email: str,
         board_slug: str,
-        thumbnail: UploadedFile = None,
+        thumbnail: any = None,
     ) -> Post:
         logger.info(
             f"PostService create: board_slug={board_slug}, has_thumbnail={bool(thumbnail)}")
@@ -82,6 +81,7 @@ class PostService:
                     board=board,
                     thumbnail=thumbnail,
                 )
+
                 logger.info(f"PostService create: Post {post.id} created.")
                 return post
             except Exception as e:
@@ -93,7 +93,8 @@ class PostService:
         post: Post,
         title: str = None,
         content: str = None,
-        thumbnail_file: UploadedFile = None,
+        thumbnail: any = None
+
     ) -> Post:
         logger.info(f"PostService update: Post {post.id} update initiated.")
         update_fields = []
@@ -104,15 +105,14 @@ class PostService:
             post.content = content
             update_fields.append('content')
 
-        if thumbnail_file is not None:
-            if thumbnail_file is False:
+        if thumbnail is not None:
+            if thumbnail is False:
                 post.thumbnail_url = None
-                update_fields.append('thumbnail_url')
+                update_fields.append('thumbnail')
             else:
-                new_thumbnail_url = FileUploader.upload_file(
-                    thumbnail_file, file_type="image")
-                post.thumbnail_url = new_thumbnail_url
-                update_fields.append('thumbnail_url')
+
+                post.thumbnail = thumbnail
+                update_fields.append('thumbnail')
 
         update_fields.append('updated_at')
 

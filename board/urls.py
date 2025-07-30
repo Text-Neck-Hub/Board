@@ -5,6 +5,7 @@ from rest_framework_nested import routers
 from .views.board_view import BoardViewSet
 from .views.post_view import PostViewSet
 from .views.comment_view import CommentViewSet
+from .views.like_view import LikeViewSet
 
 board_router = DefaultRouter()
 board_router.register(r'', BoardViewSet, basename='board')
@@ -24,8 +25,18 @@ comments_router = routers.NestedSimpleRouter(
 comments_router.register(
     r'comments', CommentViewSet, basename='comment')
 
+likes_router = routers.NestedSimpleRouter(
+    posts_router,
+    r'posts',
+    lookup='post'
+)
+likes_router.register(
+    r'likes', LikeViewSet, basename='like'
+)
+
 urlpatterns = [
     path('', include(board_router.urls)),
     path('', include(posts_router.urls)),
     path('', include(comments_router.urls)),
+    path('', include(likes_router.urls)),
 ]

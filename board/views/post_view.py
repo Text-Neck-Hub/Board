@@ -46,31 +46,34 @@ class PostViewSet(viewsets.ModelViewSet):
                 f"PostViewSet retrieve: Error fetching post {pk}: {e}")
             return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    def create(self, request, board_slug=None):
+    def create(self, request, pk=None, board_slug=None):
         logger.info(f"PostViewSet create: board_slug={board_slug}")
         try:
             data = request.data
-            title = data.get('title')
-            content = data.get('content')
-            author = request.user.id
-            email = request.user.email
-            thumbnail = request.FILES.get('thumbnail')
+            if title := data.get('title', None):
+                content = data.get('content', '')
+                author = request.user.id
+                email = request.user.email
+                thumbnail = request.FILES.get('thumbnail', None)
 
-            post = PostService.create_post(
-                title=title,
-                content=content,
-                author=author,
-                email=email,
-                board_slug=board_slug,
-                thumbnail=thumbnail
-            )
-            serializer = self.get_serializer(post)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+                post = PostService.create_post(
+                    title=title,
+                    content=content,
+                    author=author,
+                    email=email,
+                    board_slug=board_slug,
+                    thumbnail=thumbnail
+                )
+                serializer = self.get_serializer(post)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                raise ValueError('제목없음')
         except ValueError as e:
             logger.error(f"PostViewSet create: Invalid data/board: {e}")
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.exception(f"PostViewSet create: Error creating post: {e}")
+            logger.exception(
+                f"PostViewSet create: Error creating post: {e}")
             return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, pk=None, board_slug=None):
@@ -79,12 +82,13 @@ class PostViewSet(viewsets.ModelViewSet):
             post = PostService.get_post(post_id=pk, board_slug=board_slug)
             title = request.data.get('title')
             content = request.data.get('content')
-            thumbnail: UploadedFile = request.FILES.get('thumbnail')
+            thumbnail = request.data.get('thumbnail', None)
             updated_post = PostService.update_post(
                 post=post,
                 title=title,
                 content=content,
                 thumbnail=thumbnail
+
             )
             serializer = self.get_serializer(updated_post)
             return Response(serializer.data, status=status.HTTP_200_OK)
